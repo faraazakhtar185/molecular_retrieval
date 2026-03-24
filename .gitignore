@@ -1,0 +1,8 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+
+# Large local datasets and generated caches
+chembl_22_clean_1576904_sorted_std_final.smi
+demo/cache/

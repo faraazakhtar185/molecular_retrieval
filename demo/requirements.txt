@@ -1,0 +1,7 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+numpy>=1.26
+pandas>=2.2
+rdkit>=2024.3
+torch>=2.2
+torch-geometric>=2.6

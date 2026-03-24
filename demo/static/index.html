@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polymer Similarity Explorer</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="ambient ambient-a"></div>
+      <div class="ambient ambient-b"></div>
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Contrastive Chemistry Demo</p>
+          <h1>Find the closest molecules in a learned chemical space.</h1>
+          <p class="lede">
+            Paste a SMILES string and explore the nearest neighbors from the
+            library. The engine prefers the project’s contrastive graph encoder
+            and falls back to fingerprint similarity when needed.
+          </p>
+        </div>
+        <div class="hero-panel glass">
+          <div class="status-row">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Checking engine status...</span>
+          </div>
+          <div class="metric-grid">
+            <div>
+              <span class="metric-label">Mode</span>
+              <strong id="metric-mode">...</strong>
+            </div>
+            <div>
+              <span class="metric-label">Library</span>
+              <strong id="metric-library">...</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-grid">
+        <section class="glass query-panel">
+          <label for="smiles-input">SMILES query</label>
+          <textarea
+            id="smiles-input"
+            rows="4"
+            placeholder="Example: O=C(Nc1cccc(-c2cnc3ccccc3n2)c1)c1ccco1"
+          ></textarea>
+          <div class="control-row">
+            <label class="inline-control">
+              <span>Results</span>
+              <input id="top-k" type="range" min="5" max="20" value="10" />
+              <strong id="top-k-value">10</strong>
+            </label>
+            <button id="search-button">Explore neighbors</button>
+          </div>
+          <p class="helper">
+            Tip: canonical and valid SMILES work best. Result cards show the
+            similarity score and any metadata found in the source dataset.
+          </p>
+        </section>
+
+        <section class="glass query-preview">
+          <p class="section-label">Query</p>
+          <h2 id="query-title">Waiting for a molecule</h2>
+          <p id="query-subtitle">
+            Submit a SMILES string to see the canonical form and similarity
+            results.
+          </p>
+          <img id="query-canvas" class="molecule-canvas" alt="Query molecule preview" />
+          <p id="query-canonical" class="canonical-note"></p>
+          <pre id="query-smiles"></pre>
+        </section>
+      </main>
+
+      <section class="results-section">
+        <div class="results-header">
+          <div>
+            <p class="section-label">Nearest Neighbors</p>
+            <h2>Ranked molecule matches</h2>
+          </div>
+          <p id="results-meta"></p>
+        </div>
+        <div id="results-grid" class="results-grid"></div>
+      </section>
+    </div>
+
+    <template id="result-template">
+      <article class="result-card glass">
+        <div class="card-topline">
+          <span class="rank-pill"></span>
+          <span class="score-pill"></span>
+        </div>
+        <img class="molecule-canvas result-canvas" alt="Molecule preview" />
+        <pre class="result-smiles"></pre>
+        <dl class="meta-list"></dl>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
