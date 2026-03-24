@@ -5,3 +5,6 @@ The app serves a FastAPI backend with a small frontend and can run either:
 
 - locally from files on disk
 - on a host like Render without a database
+
+
+this is me trying to deploy a website having no clue how to deploy a website
