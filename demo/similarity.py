@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import html
 import json
 import pickle
 import time
@@ -415,10 +416,15 @@ class SimilarityEngine:
 
     def render_svg(self, smiles: str, width: int = 320, height: int = 180) -> str | None:
         if Chem is None or rdMolDraw2D is None:
-            return None
+            return self._placeholder_svg(
+                "Preview unavailable on this host",
+                smiles,
+                width,
+                height,
+            )
         molecule = Chem.MolFromSmiles(smiles)
         if molecule is None:
-            return None
+            return self._placeholder_svg("Could not parse SMILES", smiles, width, height)
         rdMolDraw2D.PrepareMolForDrawing(molecule)
         drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
         options = drawer.drawOptions()
@@ -426,3 +432,18 @@ class SimilarityEngine:
         drawer.DrawMolecule(molecule)
         drawer.FinishDrawing()
         return drawer.GetDrawingText()
+
+    def _placeholder_svg(self, title: str, smiles: str, width: int, height: int) -> str:
+        safe_title = html.escape(title)
+        safe_smiles = html.escape(smiles[:160] + ("..." if len(smiles) > 160 else ""))
+        return f"""
+<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+  <rect width="100%" height="100%" rx="18" ry="18" fill="#f7f9fc" />
+  <text x="24" y="42" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111827">
+    {safe_title}
+  </text>
+  <text x="24" y="78" font-family="Courier New, monospace" font-size="13" fill="#374151">
+    {safe_smiles}
+  </text>
+</svg>
+""".strip()
