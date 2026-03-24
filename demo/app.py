@@ -70,6 +70,9 @@ def load_engine() -> None:
 def health() -> dict[str, object]:
     if not engine.ready and not engine_state["loading"] and engine_state["error"] is None:
         _start_engine_thread()
+    cache_stem = engine._cache_stem() if engine.dataset_path.exists() and engine.mode != "unavailable" else None
+    cache_matrix_path = f"{cache_stem}.npy" if cache_stem else None
+    cache_records_path = f"{cache_stem}.json" if cache_stem else None
     return {
         "ok": True,
         "mode": engine.mode,
@@ -79,6 +82,11 @@ def health() -> dict[str, object]:
         "library_size": len(engine.records),
         "invalid_smiles": engine.stats["invalid_smiles"],
         "dataset": engine.dataset_path.name,
+        "cache_stem": cache_stem,
+        "cache_matrix_path": cache_matrix_path,
+        "cache_matrix_exists": Path(cache_matrix_path).exists() if cache_matrix_path else False,
+        "cache_records_path": cache_records_path,
+        "cache_records_exists": Path(cache_records_path).exists() if cache_records_path else False,
     }
 
 

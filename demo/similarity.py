@@ -2,6 +2,7 @@ import csv
 import hashlib
 import json
 import pickle
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -80,22 +81,46 @@ class SimilarityEngine:
         return self.matrix is not None and len(self.records) > 0
 
     def initialize(self) -> None:
+        started_at = time.time()
+        print(
+            "[engine] initialize start",
+            {
+                "dataset": str(self.dataset_path),
+                "model": str(self.model_path) if self.model_path else None,
+                "cache_dir": str(self.cache_dir),
+            },
+            flush=True,
+        )
         if Chem is None:
             self.mode = "unavailable"
+            print("[engine] RDKit unavailable", flush=True)
             return
         if RDLogger is not None:
             RDLogger.DisableLog("rdApp.error")
 
         self.records = self._load_records()
+        print("[engine] records loaded", {"count": len(self.records)}, flush=True)
 
         encoder_available = self._can_use_encoder()
+        print("[engine] encoder availability", {"encoder_available": encoder_available}, flush=True)
         if self.dataset_path.suffix.lower() == ".smi" or len(self.records) > 100_000:
             self.mode = "hybrid" if encoder_available else "fingerprint"
         else:
             self.mode = "encoder" if encoder_available else "fingerprint"
+        print("[engine] selected mode", {"mode": self.mode}, flush=True)
 
         self._load_or_build_index()
         self.stats["loaded_records"] = len(self.records)
+        print(
+            "[engine] initialize complete",
+            {
+                "ready": self.ready,
+                "mode": self.mode,
+                "records": len(self.records),
+                "seconds": round(time.time() - started_at, 2),
+            },
+            flush=True,
+        )
 
     def _can_use_encoder(self) -> bool:
         return all(
@@ -181,8 +206,19 @@ class SimilarityEngine:
         matrix_path = Path(f"{self._cache_stem()}.npy")
         records_path = Path(f"{self._cache_stem()}.json")
         fingerprints_path = Path(f"{self._cache_stem()}_fps.pkl")
+        print(
+            "[engine] cache lookup",
+            {
+                "stem": self._cache_stem(),
+                "records_exists": records_path.exists(),
+                "matrix_exists": matrix_path.exists(),
+                "fingerprints_exists": fingerprints_path.exists(),
+            },
+            flush=True,
+        )
 
         if self.mode in {"fingerprint", "hybrid"} and records_path.exists() and fingerprints_path.exists():
+            print("[engine] cache hit", {"mode": self.mode, "kind": "fingerprints"}, flush=True)
             self.records = json.loads(records_path.read_text())
             for record in self.records:
                 record["metadata"] = self._clean_metadata(record.get("metadata", {}))
@@ -194,6 +230,7 @@ class SimilarityEngine:
             return
 
         if self.mode == "encoder" and matrix_path.exists() and records_path.exists():
+            print("[engine] cache hit", {"mode": self.mode, "kind": "matrix"}, flush=True)
             self.matrix = np.load(matrix_path)
             self.records = json.loads(records_path.read_text())
             for record in self.records:
@@ -201,6 +238,7 @@ class SimilarityEngine:
             self._load_encoder()
             return
 
+        print("[engine] cache miss", {"mode": self.mode}, flush=True)
         if self.mode == "encoder":
             self._load_encoder()
             matrix = [self._embed_smiles(record["smiles"]) for record in self.records]
@@ -235,11 +273,13 @@ class SimilarityEngine:
     def _load_encoder(self) -> None:
         if self.model is not None:
             return
+        print("[engine] loading encoder", {"model_path": str(self.model_path)}, flush=True)
         self.graph_converter = SMILESToGraph()
         self.model = ContrastiveLearningModel()
         state_dict = torch.load(self.model_path, map_location="cpu")
         self.model.load_state_dict(state_dict)
         self.model.eval()
+        print("[engine] encoder loaded", flush=True)
 
     def _canonicalize_smiles(self, smiles: str) -> str | None:
         if not smiles or Chem is None:
