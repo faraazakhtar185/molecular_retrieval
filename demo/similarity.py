@@ -11,12 +11,14 @@ import numpy as np
 try:
     from rdkit import Chem, DataStructs, RDLogger
     from rdkit.Chem import rdFingerprintGenerator
-    from rdkit.Chem.Draw import rdMolDraw2D
 except ImportError:  # pragma: no cover
     Chem = None
     DataStructs = None
     RDLogger = None
     rdFingerprintGenerator = None
+try:
+    from rdkit.Chem.Draw import rdMolDraw2D
+except ImportError:  # pragma: no cover
     rdMolDraw2D = None
 
 try:
