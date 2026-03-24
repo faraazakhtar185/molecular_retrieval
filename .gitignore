@@ -5,4 +5,6 @@ __pycache__/
 
 # Large local datasets and generated caches
 chembl_22_clean_1576904_sorted_std_final.smi
-demo/cache/
+demo/cache/*
+!demo/cache/library_0aaf03cd0061.json
+!demo/cache/library_0aaf03cd0061.npy

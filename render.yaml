@@ -7,6 +7,6 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: CACHE_DIR
-        value: /tmp/cache
+        value: demo/cache
       - key: DATASET_PATH
         value: SMILES_Big_Data_Set.csv
