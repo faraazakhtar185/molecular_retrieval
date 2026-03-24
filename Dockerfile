@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender1 \
     libsm6 \
+    libcairo2 \
+    libfreetype6 \
+    libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY demo/requirements.txt demo/requirements.txt
