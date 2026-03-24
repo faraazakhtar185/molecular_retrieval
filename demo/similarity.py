@@ -45,7 +45,7 @@ class SearchResult:
 class SimilarityEngine:
     """Builds a searchable library from SMILES and serves nearest-neighbor queries."""
 
-    CACHE_VERSION = "v3"
+    CACHE_VERSION = "v4"
 
     def __init__(
         self,
@@ -168,8 +168,12 @@ class SimilarityEngine:
         }
 
     def _cache_stem(self) -> str:
+        dataset_stat = self.dataset_path.stat()
         digest = hashlib.sha256(
-            f"{self.dataset_path.resolve()}::{self.mode}::{self.CACHE_VERSION}".encode("utf-8")
+            (
+                f"{self.dataset_path.name}::{dataset_stat.st_size}::"
+                f"{self.mode}::{self.CACHE_VERSION}"
+            ).encode("utf-8")
         ).hexdigest()[:12]
         return str(self.cache_dir / f"library_{digest}")
 
