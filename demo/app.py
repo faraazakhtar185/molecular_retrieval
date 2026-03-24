@@ -1,4 +1,5 @@
 import os
+import threading
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
@@ -53,14 +54,35 @@ def _default_download_path() -> Path:
     return data_dir / filename
 
 
-DATASET_PATH = _maybe_download_dataset(
-    _resolve_path(os.getenv("DATASET_PATH"), _default_download_path())
-)
+DATASET_PATH = _resolve_path(os.getenv("DATASET_PATH"), _default_download_path())
 MODEL_PATH = _resolve_path(os.getenv("MODEL_PATH"), DEFAULT_MODEL_PATH)
 CACHE_DIR = _resolve_path(os.getenv("CACHE_DIR"), ROOT / "demo" / "cache")
 
 app = FastAPI(title="Polymer Similarity Explorer")
 engine = SimilarityEngine(DATASET_PATH, MODEL_PATH, cache_dir=CACHE_DIR)
+engine_lock = threading.Lock()
+engine_state = {"loading": False, "error": None}
+
+
+def _initialize_engine() -> None:
+    with engine_lock:
+        if engine.ready or engine_state["loading"]:
+            return
+        engine_state["loading"] = True
+        engine_state["error"] = None
+
+    try:
+        engine.dataset_path = _maybe_download_dataset(engine.dataset_path)
+        engine.initialize()
+    except Exception as exc:  # pragma: no cover
+        engine_state["error"] = str(exc)
+    finally:
+        engine_state["loading"] = False
+
+
+def _start_engine_thread() -> None:
+    worker = threading.Thread(target=_initialize_engine, daemon=True)
+    worker.start()
 
 
 class SearchRequest(BaseModel):
@@ -70,15 +92,19 @@ class SearchRequest(BaseModel):
 
 @app.on_event("startup")
 def load_engine() -> None:
-    engine.initialize()
+    _start_engine_thread()
 
 
 @app.get("/api/health")
 def health() -> dict[str, object]:
+    if not engine.ready and not engine_state["loading"] and engine_state["error"] is None:
+        _start_engine_thread()
     return {
         "ok": True,
         "mode": engine.mode,
         "ready": engine.ready,
+        "loading": engine_state["loading"],
+        "error": engine_state["error"],
         "library_size": len(engine.records),
         "invalid_smiles": engine.stats["invalid_smiles"],
         "dataset": engine.dataset_path.name,
